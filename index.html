@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pixel Crosser — Hop. Dodge. Chill.</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --night:#1b1533;
+    --night2:#241c3d;
+    --night3:#150f28;
+    --coral:#ff6b4a;
+    --teal:#4ecdc4;
+    --gold:#ffd166;
+    --cream:#f7f1e3;
+    --asphalt:#171224;
+    --line-w:3px;
+  }
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    margin:0;
+    background:var(--night);
+    color:var(--cream);
+    font-family:'Space Grotesk',sans-serif;
+    overflow-x:hidden;
+  }
+  h1,h2,h3,.pixel{
+    font-family:'Press Start 2P',monospace;
+    line-height:1.5;
+  }
+  a{color:inherit;}
+  img,canvas{image-rendering:pixelated;image-rendering:crisp-edges;}
+
+  /* ---------- ambient starfield ---------- */
+  .stars{
+    position:fixed;inset:0;z-index:0;pointer-events:none;
+    background:
+      radial-gradient(2px 2px at 10% 20%, var(--cream) 0%, transparent 60%),
+      radial-gradient(2px 2px at 80% 10%, var(--gold) 0%, transparent 60%),
+      radial-gradient(2px 2px at 60% 70%, var(--cream) 0%, transparent 60%),
+      radial-gradient(2px 2px at 30% 80%, var(--teal) 0%, transparent 60%),
+      radial-gradient(2px 2px at 90% 60%, var(--cream) 0%, transparent 60%),
+      radial-gradient(2px 2px at 45% 35%, var(--gold) 0%, transparent 60%),
+      radial-gradient(2px 2px at 15% 55%, var(--cream) 0%, transparent 60%),
+      radial-gradient(2px 2px at 70% 90%, var(--teal) 0%, transparent 60%);
+    opacity:.5;
+    animation:twinkle 5s ease-in-out infinite alternate;
+  }
+  @keyframes twinkle{from{opacity:.25;}to{opacity:.65;}}
+
+  /* ---------- nav ---------- */
+  nav{
+    position:relative;z-index:2;
+    display:flex;align-items:center;justify-content:space-between;
+    padding:22px 28px;max-width:1180px;margin:0 auto;
+  }
+  .logo{
+    font-size:13px;letter-spacing:1px;display:flex;align-items:center;gap:10px;
+  }
+  .logo-mark{
+    width:22px;height:22px;background:var(--coral);
+    box-shadow: 6px 0 0 var(--gold), -6px 0 0 var(--teal);
+    flex-shrink:0;
+  }
+  .nav-cta{
+    font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:13px;
+    text-decoration:none;background:var(--cream);color:var(--night3);
+    padding:10px 16px;border:var(--line-w) solid var(--cream);
+    box-shadow:4px 4px 0 var(--coral);
+    transition:transform .15s ease, box-shadow .15s ease;
+  }
+  .nav-cta:hover{transform:translate(-2px,-2px);box-shadow:6px 6px 0 var(--coral);}
+
+  /* ---------- hero ---------- */
+  .hero{
+    position:relative;z-index:1;max-width:1180px;margin:0 auto;
+    padding:40px 28px 90px;
+    display:grid;grid-template-columns:1.05fr 0.95fr;gap:56px;align-items:center;
+  }
+  .eyebrow{
+    display:inline-block;font-size:11px;letter-spacing:1.5px;color:var(--gold);
+    border:var(--line-w) dashed var(--gold); padding:6px 10px; margin-bottom:22px;
+  }
+  .hero h1{
+    font-size:clamp(28px,4.2vw,46px);color:var(--cream);margin:0 0 22px;
+    text-shadow:4px 4px 0 var(--night3);
+  }
+  .hero h1 span{color:var(--coral);}
+  .hero p{
+    font-size:17px;line-height:1.7;color:#d8d2ec;max-width:52ch;margin:0 0 30px;
+  }
+  .hero-ctas{display:flex;flex-wrap:wrap;gap:14px;}
+  .btn{
+    font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:14px;
+    text-decoration:none;padding:14px 20px;border:var(--line-w) solid var(--cream);
+    display:inline-flex;align-items:center;gap:8px;cursor:pointer;
+    transition:transform .15s ease, box-shadow .15s ease;
+  }
+  .btn-primary{background:var(--coral);color:var(--night3);box-shadow:5px 5px 0 var(--gold);}
+  .btn-primary:hover{transform:translate(-2px,-2px);box-shadow:7px 7px 0 var(--gold);}
+  .btn-ghost{background:transparent;color:var(--cream);box-shadow:5px 5px 0 var(--teal);}
+  .btn-ghost:hover{transform:translate(-2px,-2px);box-shadow:7px 7px 0 var(--teal);}
+
+  .fact-row{display:flex;gap:26px;margin-top:34px;flex-wrap:wrap;}
+  .fact{font-size:11px;color:#b7aee0;max-width:22ch;padding-left:14px;border-left:var(--line-w) solid var(--teal);}
+  .fact b{display:block;color:var(--cream);font-family:'Press Start 2P';font-size:10px;margin-bottom:6px;}
+
+  /* ---------- game panel ---------- */
+  .game-wrap{
+    position:relative;justify-self:center;
+    background:var(--night2);
+    border:var(--line-w) solid var(--cream);
+    box-shadow:10px 10px 0 var(--night3), 10px 10px 0 3px var(--cream);
+    padding:16px 16px 20px;
+    width:100%;max-width:360px;
+  }
+  .game-header{
+    display:flex;justify-content:space-between;align-items:center;
+    font-size:10px;margin-bottom:12px;color:var(--gold);
+  }
+  .game-stats{display:flex;gap:14px;}
+  #gameCanvas{
+    width:100%;height:auto;display:block;border:var(--line-w) solid var(--night3);
+    background:var(--asphalt);touch-action:none;
+  }
+  .controls{
+    display:grid;grid-template-columns:repeat(3,44px);grid-template-rows:repeat(2,40px);
+    gap:6px;justify-content:center;margin-top:14px;
+  }
+  .ctrl-btn{
+    background:var(--night3);border:2px solid var(--cream);color:var(--cream);
+    font-family:'Press Start 2P';font-size:12px;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;
+    user-select:none;-webkit-tap-highlight-color:transparent;
+    transition:background .1s ease;
+  }
+  .ctrl-btn:active{background:var(--coral);}
+  .c-up{grid-column:2;grid-row:1;}
+  .c-left{grid-column:1;grid-row:2;}
+  .c-down{grid-column:2;grid-row:2;}
+  .c-right{grid-column:3;grid-row:2;}
+  .hint{font-size:10px;color:#8f86b8;text-align:center;margin-top:10px;letter-spacing:.5px;}
+  .overlay-msg{
+    position:absolute;inset:16px 16px auto;top:40%;
+    text-align:center;font-size:12px;color:var(--gold);
+    text-shadow:3px 3px 0 var(--night3);opacity:0;pointer-events:none;
+    transition:opacity .2s ease;
+  }
+  .overlay-msg.show{opacity:1;}
+
+  /* ---------- sections ---------- */
+  section{position:relative;z-index:1;max-width:1180px;margin:0 auto;padding:70px 28px;}
+  .section-title{font-size:20px;margin:0 0 12px;color:var(--cream);}
+  .section-title .dot{color:var(--coral);}
+  .section-sub{color:#b7aee0;max-width:56ch;margin:0 0 44px;line-height:1.7;}
+
+  .rules{display:grid;grid-template-columns:repeat(2,1fr);gap:22px;}
+  .rule-card{
+    background:var(--night2);border:2px solid #372c5c;padding:26px;
+    clip-path:polygon(0 12px,12px 0,100% 0,100% calc(100% - 12px),calc(100% - 12px) 100%,0 100%);
+  }
+  .rule-card .num{font-family:'Press Start 2P';font-size:11px;color:var(--teal);margin-bottom:14px;display:block;}
+  .rule-card h3{font-family:'Space Grotesk';font-size:18px;margin:0 0 10px;color:var(--cream);}
+  .rule-card p{margin:0;color:#b7aee0;line-height:1.6;font-size:14px;}
+
+  .features{display:grid;grid-template-columns:repeat(4,1fr);gap:18px;}
+  .feature{
+    background:var(--night2);border:2px solid #372c5c;padding:22px 18px;
+    clip-path:polygon(0 10px,10px 0,100% 0,100% calc(100% - 10px),calc(100% - 10px) 100%,0 100%);
+    transition:transform .15s ease, border-color .15s ease;
+  }
+  .feature:hover{transform:translateY(-6px);border-color:var(--coral);}
+  .feature .icon{width:30px;height:30px;margin-bottom:16px;}
+  .feature h3{font-size:14px;margin:0 0 8px;color:var(--gold);font-family:'Space Grotesk';font-weight:700;}
+  .feature p{font-size:13px;color:#b7aee0;line-height:1.6;margin:0;}
+
+  .scenes{display:grid;grid-template-columns:repeat(3,1fr);gap:22px;}
+  .scene{
+    border:2px solid var(--cream);background:var(--night3);
+    box-shadow:6px 6px 0 var(--night2);
+    aspect-ratio:9/14;position:relative;overflow:hidden;
+  }
+  .scene .label{
+    position:absolute;bottom:0;left:0;right:0;background:rgba(21,15,40,.85);
+    font-size:10px;padding:8px 10px;color:var(--gold);letter-spacing:.5px;
+  }
+  .scene-sky1{background:linear-gradient(180deg,#3a2a63,#ff6b4a 70%,#ffd166);}
+  .scene-sky2{background:linear-gradient(180deg,#150f28,#241c3d 60%,#4ecdc4);}
+  .scene-sky3{background:linear-gradient(180deg,#241c3d,#1b1533 50%,#2e2a4a);}
+  .lane-strip{position:absolute;left:0;right:0;height:14%;}
+  .px{position:absolute;width:10%;height:100%;}
+
+  .cta-band{
+    text-align:center;padding:80px 28px;background:var(--night2);
+    border-top:2px solid #372c5c;border-bottom:2px solid #372c5c;
+  }
+  .cta-band h2{font-size:22px;margin:0 0 16px;}
+  .cta-band p{color:#b7aee0;max-width:48ch;margin:0 auto 30px;line-height:1.7;}
+
+  footer{
+    position:relative;z-index:1;padding:40px 28px;text-align:center;color:#8f86b8;font-size:12px;
+  }
+  footer a{text-decoration:underline;text-underline-offset:3px;}
+  .foot-dots{display:flex;justify-content:center;gap:8px;margin-bottom:18px;}
+  .foot-dots span{width:8px;height:8px;background:var(--coral);}
+  .foot-dots span:nth-child(2){background:var(--gold);}
+  .foot-dots span:nth-child(3){background:var(--teal);}
+
+  @media (max-width:900px){
+    .hero{grid-template-columns:1fr;padding-top:20px;}
+    .rules{grid-template-columns:1fr;}
+    .features{grid-template-columns:repeat(2,1fr);}
+    .scenes{grid-template-columns:1fr;}
+    .game-wrap{max-width:340px;}
+  }
+  @media (prefers-reduced-motion: reduce){
+    .stars{animation:none;opacity:.4;}
+    *{transition:none !important;}
+  }
+</style>
+</head>
+<body>
+<div class="stars"></div>
+
+<nav>
+  <div class="logo"><span class="logo-mark"></span> PIXEL CROSSER</div>
+  <a class="nav-cta" href="https://play.google.com/store/apps/details?id=com.aistudio.pixelcrosser.vhyzwq" target="_blank" rel="noopener">GET IT ON PLAY</a>
+</nav>
+
+<section class="hero">
+  <div>
+    <span class="eyebrow">MADE SOLO IN INDIA</span>
+    <h1>HOP. DODGE.<br><span>CHILL.</span></h1>
+    <p>Pixel Crosser is the tiny, low-stakes way to burn two minutes. Nudge your pixel pal across lane after lane without getting flattened — no timers, no ads mid-run, just vibes and near-misses.</p>
+    <div class="hero-ctas">
+      <a class="btn btn-primary" href="#demo">▶ PLAY THE DEMO</a>
+      <a class="btn btn-ghost" href="https://play.google.com/store/apps/details?id=com.aistudio.pixelcrosser.vhyzwq" target="_blank" rel="noopener">GET IT ON GOOGLE PLAY</a>
+    </div>
+    <div class="fact-row">
+      <div class="fact"><b>NO DATA HOARDING</b>Shares nothing with third parties — your crossings stay yours.</div>
+      <div class="fact"><b>RATED 3+</b>Casual enough for the whole couch.</div>
+      <div class="fact"><b>ONE THUMB</b>Built for pocket-sized sessions.</div>
+    </div>
+  </div>
+
+  <div class="game-wrap" id="demo">
+    <div class="game-header">
+      <span>PIXEL CROSSER — LIVE DEMO</span>
+      <div class="game-stats">
+        <span id="scoreLabel">ROW 0/12</span>
+        <span id="bestLabel">BEST 0</span>
+      </div>
+    </div>
+    <canvas id="gameCanvas" width="306" height="442"></canvas>
+    <div class="overlay-msg" id="overlayMsg"></div>
+    <div class="controls">
+      <button class="ctrl-btn c-up" data-dx="0" data-dy="1">▲</button>
+      <button class="ctrl-btn c-left" data-dx="-1" data-dy="0">◀</button>
+      <button class="ctrl-btn c-down" data-dx="0" data-dy="-1">▼</button>
+      <button class="ctrl-btn c-right" data-dx="1" data-dy="0">▶</button>
+    </div>
+    <p class="hint">ARROW KEYS / WASD, OR TAP THE PIXEL PAD</p>
+  </div>
+</section>
+
+<section id="rules">
+  <h2 class="section-title">THE RULES <span class="dot">(ALL TWO OF THEM)</span></h2>
+  <p class="section-sub">No tutorials, no onboarding wizard. Pixel Crosser hands you the controls and gets out of the way.</p>
+  <div class="rules">
+    <div class="rule-card">
+      <span class="num">RULE 01</span>
+      <h3>Nudge a lane at a time</h3>
+      <p>Every tap or key press moves you exactly one square — up, down, left or right. Precise, deliberate, no accidental sprints into traffic.</p>
+    </div>
+    <div class="rule-card">
+      <span class="num">RULE 02</span>
+      <h3>Don't get flattened</h3>
+      <p>Traffic keeps rolling whether you move or not. Time your crossing, breathe, and make it to the top row in one piece.</p>
+    </div>
+  </div>
+</section>
+
+<section id="features">
+  <h2 class="section-title">WHY IT'S CHILL</h2>
+  <p class="section-sub">Casual doesn't mean lazy. Every lane is hand-tuned to feel fair, even when it's laughing at you.</p>
+  <div class="features">
+    <div class="feature">
+      <div class="icon" style="background:var(--coral);"></div>
+      <h3>One thumb, zero stress</h3>
+      <p>Pick it up mid-queue, put it down when your bus arrives. No save-scumming required.</p>
+    </div>
+    <div class="feature">
+      <div class="icon" style="background:var(--teal);"></div>
+      <h3>Hand-placed pixels</h3>
+      <p>Every lane, car and blade of grass is drawn square by square — no stock asset packs.</p>
+    </div>
+    <div class="feature">
+      <div class="icon" style="background:var(--gold);"></div>
+      <h3>Bite-sized runs</h3>
+      <p>Twelve rows stand between you and the goal. Most runs are over before your coffee cools.</p>
+    </div>
+    <div class="feature">
+      <div class="icon" style="background:var(--cream);"></div>
+      <h3>Encrypted, not sold</h3>
+      <p>Traffic in transit is encrypted, and nothing you do gets handed to third parties.</p>
+    </div>
+  </div>
+</section>
+
+<section id="scenes">
+  <h2 class="section-title">A LOOK INSIDE</h2>
+  <p class="section-sub">Concept mockups of what a crossing feels like — sunset commutes, night shifts, and the long walk home.</p>
+  <div class="scenes">
+    <div class="scene scene-sky1"><div class="label">GOLDEN HOUR TRAFFIC</div></div>
+    <div class="scene scene-sky2"><div class="label">LATE NIGHT LANES</div></div>
+    <div class="scene scene-sky3"><div class="label">THE HOME STRETCH</div></div>
+  </div>
+</section>
+
+<div class="cta-band">
+  <h2 class="pixel">READY TO CROSS?</h2>
+  <p>Pixel Crosser is free to install, contains ads, and asks for nothing you didn't offer. Grab it on Google Play and see how far you get.</p>
+  <a class="btn btn-primary" href="https://play.google.com/store/apps/details?id=com.aistudio.pixelcrosser.vhyzwq" target="_blank" rel="noopener">GET IT ON GOOGLE PLAY</a>
+</div>
+
+<footer>
+  <div class="foot-dots"><span></span><span></span><span></span></div>
+  <p>Pixel Crosser — built by Vishwottam Havalesh Kudekar, India.<br>
+  <a href="mailto:vishwottam9@gmail.com">vishwottam9@gmail.com</a> ·
+  <a href="https://vishwottam10.github.io/privacypolicypixel/" target="_blank" rel="noopener">Privacy Policy</a></p>
+  <p>This is an unofficial fan-made landing page, not the game's official site.</p>
+</footer>
+
+<script>
+(function(){
+  const canvas = document.getElementById('gameCanvas');
+  const ctx = canvas.getContext('2d');
+  ctx.imageSmoothingEnabled = false;
+
+  const COLS = 9, ROWS = 13, CELL = 34;
+  const W = canvas.width, H = canvas.height;
+
+  const COLORS = {
+    asphalt:'#171224', laneLine:'#2e2745',
+    grass1:'#1f7a6c', grass2:'#25907f',
+    start:'#2b2350', goal:'#2b2350',
+    car1:'#ffd166', car2:'#ff6b4a', carWin:'#f7f1e3',
+    player:'#ff6b4a', playerDark:'#c94a30', playerEye:'#f7f1e3'
+  };
+
+  let rows = [];
+  function buildRows(){
+    rows = [];
+    for(let r=0;r<ROWS;r++){
+      let type;
+      if(r===0) type='start';
+      else if(r===ROWS-1) type='goal';
+      else type = (r%2===1) ? 'road' : 'grass';
+      const row = {type, obstacles:[]};
+      if(type==='road'){
+        const dir = (Math.floor(r/2)%2===0) ? 1 : -1;
+        const speed = 0.55 + r*0.11;
+        const count = 2;
+        for(let i=0;i<count;i++){
+          const ow = CELL*1.7;
+          const spacing = W/count;
+          const jitter = ((r*53 + i*97) % 40);
+          row.obstacles.push({
+            x: i*spacing + jitter,
+            w: ow, dir, speed
+          });
+        }
+      }
+      rows.push(row);
+    }
+  }
+  buildRows();
+
+  function rowY(r){ return H - (r+1)*CELL; }
+
+  const player = {
+    col: Math.floor(COLS/2), row: 0,
+    x: 0, y: 0, fromX:0, fromY:0, toX:0, toY:0,
+    animating:false, animStart:0, animDur:110
+  };
+  function syncPlayerPixels(instant){
+    const px = player.col*CELL, py = rowY(player.row);
+    if(instant){ player.x=px; player.y=py; player.fromX=px; player.fromY=py; player.toX=px; player.toY=py; player.animating=false; }
+  }
+  syncPlayerPixels(true);
+
+  let best = 0;
+  let locked = false; // during win/lose transition
+
+  const scoreLabel = document.getElementById('scoreLabel');
+  const bestLabel = document.getElementById('bestLabel');
+  const overlay = document.getElementById('overlayMsg');
+
+  function updateHUD(){
+    scoreLabel.textContent = 'ROW ' + player.row + '/' + (ROWS-1);
+    bestLabel.textContent = 'BEST ' + best;
+  }
+  updateHUD();
+
+  function showOverlay(text, ms){
+    overlay.textContent = text;
+    overlay.classList.add('show');
+    setTimeout(()=> overlay.classList.remove('show'), ms);
+  }
+
+  function movePlayer(dc, dr){
+    if(locked || player.animating) return;
+    const newCol = Math.max(0, Math.min(COLS-1, player.col + dc));
+    const newRow = Math.max(0, Math.min(ROWS-1, player.row + dr));
+    if(newCol===player.col && newRow===player.row) return;
+
+    player.fromX = player.x; player.fromY = player.y;
+    player.col = newCol; player.row = newRow;
+    player.toX = newCol*CELL; player.toY = rowY(newRow);
+    player.animating = true; player.animStart = performance.now();
+
+    if(newRow > best){ best = newRow; }
+    updateHUD();
+
+    if(newRow === ROWS-1){
+      locked = true;
+      setTimeout(()=>{
+        showOverlay('NICE CROSSING! 🎉', 1300);
+        setTimeout(()=>{
+          player.row = 0; player.col = Math.floor(COLS/2);
+          syncPlayerPixels(true);
+          locked = false;
+          updateHUD();
+        }, 900);
+      }, player.animDur);
+    }
+  }
+
+  function triggerLose(){
+    if(locked) return;
+    locked = true;
+    showOverlay('SQUISHED 💥', 900);
+    setTimeout(()=>{
+      player.row = 0; player.col = Math.floor(COLS/2);
+      syncPlayerPixels(true);
+      locked = false;
+      updateHUD();
+    }, 700);
+  }
+
+  window.addEventListener('keydown', (e)=>{
+    const map = {
+      ArrowUp:[0,1], KeyW:[0,1],
+      ArrowDown:[0,-1], KeyS:[0,-1],
+      ArrowLeft:[-1,0], KeyA:[-1,0],
+      ArrowRight:[1,0], KeyD:[1,0]
+    };
+    if(map[e.code]){
+      e.preventDefault();
+      movePlayer(map[e.code][0], map[e.code][1]);
+    }
+  });
+
+  document.querySelectorAll('.ctrl-btn').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      movePlayer(parseInt(btn.dataset.dx,10), parseInt(btn.dataset.dy,10));
+    });
+  });
+
+  function drawPixelCar(x, y, w, h, colorA, colorB){
+    ctx.fillStyle = colorA;
+    ctx.fillRect(x, y, w, h);
+    ctx.fillStyle = colorB;
+    ctx.fillRect(x+w*0.15, y+h*0.2, w*0.2, h*0.25);
+    ctx.fillRect(x+w*0.65, y+h*0.2, w*0.2, h*0.25);
+  }
+
+  function drawPlayer(px, py){
+    const s = CELL;
+    const pad = s*0.12;
+    ctx.fillStyle = COLORS.playerDark;
+    ctx.fillRect(px+pad+2, py+pad+2, s-pad*2, s-pad*2);
+    ctx.fillStyle = COLORS.player;
+    ctx.fillRect(px+pad, py+pad, s-pad*2, s-pad*2);
+    ctx.fillStyle = COLORS.playerEye;
+    ctx.fillRect(px+s*0.28, py+s*0.32, s*0.14, s*0.14);
+    ctx.fillRect(px+s*0.58, py+s*0.32, s*0.14, s*0.14);
+  }
+
+  function frame(now){
+    ctx.clearRect(0,0,W,H);
+
+    for(let r=0;r<ROWS;r++){
+      const row = rows[r];
+      const y = rowY(r);
+      if(row.type==='road'){
+        ctx.fillStyle = COLORS.asphalt;
+        ctx.fillRect(0,y,W,CELL);
+        ctx.fillStyle = COLORS.laneLine;
+        for(let lx=0; lx<W; lx+=18){ ctx.fillRect(lx, y+CELL/2-2, 8, 4); }
+      } else if(row.type==='grass'){
+        ctx.fillStyle = (r%4===0)?COLORS.grass1:COLORS.grass2;
+        ctx.fillRect(0,y,W,CELL);
+      } else {
+        ctx.fillStyle = COLORS.start;
+        ctx.fillRect(0,y,W,CELL);
+      }
+
+      if(row.type==='road' && !locked){
+        row.obstacles.forEach(ob=>{
+          ob.x += ob.dir * ob.speed;
+          if(ob.dir>0 && ob.x > W) ob.x = -ob.w;
+          if(ob.dir<0 && ob.x < -ob.w) ob.x = W;
+        });
+      }
+      if(row.type==='road'){
+        row.obstacles.forEach(ob=>{
+          drawPixelCar(ob.x, y+4, ob.w, CELL-8, r%2===0?COLORS.car1:COLORS.car2, COLORS.carWin);
+        });
+      }
+    }
+
+    // player animation
+    if(player.animating){
+      const t = Math.min(1, (now - player.animStart)/player.animDur);
+      player.x = player.fromX + (player.toX - player.fromX)*t;
+      player.y = player.fromY + (player.toY - player.fromY)*t;
+      if(t>=1){ player.animating = false; player.x = player.toX; player.y = player.toY; }
+    }
+    drawPlayer(player.x, player.y);
+
+    // collision check (only when settled on a road row)
+    if(!locked && !player.animating){
+      const row = rows[player.row];
+      if(row.type==='road'){
+        const pl = player.x + CELL*0.12, pr = player.x + CELL*0.88;
+        row.obstacles.forEach(ob=>{
+          const ol = ob.x, or_ = ob.x + ob.w;
+          if(pr > ol && pl < or_) triggerLose();
+        });
+      }
+    }
+
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
